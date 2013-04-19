@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>nodechat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <link href="/stylesheets/bootstrap.min.css" rel="stylesheet">
+    <link href="/stylesheets/chat.css" rel="stylesheet">
+    <style>
+      body {
+        /* 60px to make the container go all the way to the bottom of the topbar */
+        padding-top: 60px; 
+      }
+      
+      #chat {
+        list-style: none;
+        margin: 0;
+      }
+    </style>
+    <link href="/stylesheets/bootstrap-responsive.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    
+    <!-- Fav and touch icons 
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">
+    <link rel="shortcut icon" href="../assets/ico/favicon.png">
+    -->
+  </head>
+  <body>
+    
+    <div id="container" class="container-fluid">
+        <div class="span11">
+            <div id="chatContainer">
+                <ul id="chat" class="well"></ul>
+                
+                <ul id="chatTemplate">
+                    <li>
+                        [<span class="messageTimestamp"></span>]
+                        <strong class="messageOrigin"></strong>
+                        <span class="message"></span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="clearfix"></div>
+            
+            <div id="messageArea">
+                <textarea id="msg" 
+                          class="clearfix" 
+                          maxlength="255"
+                          placeholder="type things here"></textarea>
+            </div>
+        </div>
+        
+        <div class="span2" id="userListContainer">
+            <p><span id="numberOfUsers">0</span> really awesome <span id="numberOfUsersNoun">people</span></p>
+            <ul id="users"></ul>
+        </div>
+    </div>
+    
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <script src="//prgmrbill.com:8000/socket.io/socket.io.js"></script>
+    <script src="/javascripts/bootstrap.min.js"></script>
+    <script src="/javascripts/moment.min.js"></script>
+    <script src="/javascripts/chat.js"></script>
+    
+    <script>
+        $(function() {
+            var socket   = io.connect('http://prgmrbill.com:8000');            
+            var username = generateName();
+            
+            socket.on('connect', function () {                  
+                socket.emit('adduser', username);
+            });
+            
+            // Chat update
+            socket.on('updatechat', function (data) {
+                var chat               = $('#chat');
+                var formattedDate      = moment().format('MMMM Do YYYY, h:mm:ss a');
+                var chatTS             = '[' + formattedDate + '] ';
+                var userNameAndMessage = chatTS + '&lt;<strong>' + data.from + '</strong>> ' + data.message;    
+                var msgClass           = data.isSystemMessage ? 'systemMessage' : '';
+                
+                chat.append('<li class="' + msgClass + '">' + userNameAndMessage + '</li>');
+                chat.scrollTop(99999);
+            });
+            
+            // Update user list
+            socket.on('updateusers', function (users) {
+                $('#users').empty();
+                users.sort();
+                
+                $.each(users, function(key, value) {
+                    if (value) {
+                        // Highlight own username
+                        if (value === username) {
+                            listUser = '<strong>' + value + '</strong>';
+                        } else {
+                            listUser = value;
+                        }
+                        
+                        $('#users').append('<li>' + listUser + '</li>');
+                    }
+                });
+                
+                $('#numberOfUsers').text(users.length);
+                
+                var noun = users.length === 1 ? 'person' : 'people';
+                $('#numberOfUsersNoun').text(noun);
+            });
+            
+            // Enter on msg
+            $('#msg').on('keypress', function (e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    var msg = $.trim($('#msg').val());    
+                        msg = escapeHTML(msg);
+                    
+                    if (msg) {
+                        socket.emit('sendchat', msg);
+                    }
+                    
+                    $('#msg').val('');
+                    $('#chat').scrollTop(99999);
+                }
+            });
+        });
+        
+        function escapeHTML(unsafe) {
+            return unsafe
+                   .replace(/&/g, "&amp;")
+                   .replace(/</g, "&lt;")
+                   .replace(/>/g, "&gt;")
+                   .replace(/"/g, "&quot;")
+                   .replace(/'/g, "&#039;");
+        }
+        
+        /**
+         * Based on http://remysharp.com/2008/04/14/pronounceablely-random/
+         *
+         */
+        function generateName()
+        {
+            var length     = 10;
+            var vowels     = ['a', 'e', 'i', 'o', 'u'];
+            var consonants = ['b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 
+                              'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y', 'z'];
+            var word       = '';
+            var vowel      = '';
+            var consonant  = '';
+            
+            for (var i = 0; i < length-1; i++) {
+                if (i % 2 == 0) {
+                    vowel = vowels[Math.floor(Math.random()*vowels.length)];
+                    word += vowel;
+                } else {
+                    consonant = consonants[Math.floor(Math.random()*consonants.length)];
+                    word     += consonant;
+                }
+            }
+            
+            return word.shuffle();
+        }
+        
+        String.prototype.shuffle = function () {
+            var a = this.split(''),
+                n = a.length;
+
+            for (var i = n - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = a[i];
+                a[i] = a[j];
+                a[j] = tmp;
+            }
+            
+            return a.join("");
+        };
+        
+    </script>
+  </body>
+</html>

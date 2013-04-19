@@ -1,0 +1,98 @@
+
+#container {
+    
+}
+
+#chat, #msg {
+    padding: 1em;
+    width: 95%;
+}
+
+#chatContainer {
+    overflow: hidden;
+}
+
+#chat { 
+    display: block;
+    height: 500px;
+    float: left;
+    margin-bottom: 1em;
+    overflow-y: scroll;
+}   
+
+    #chat li {
+        font-size: 120%;
+        line-height: 1.5;
+        padding: 1em;
+        border-top: 1px dotted #222;
+    }
+    
+    #chat li.systemMessage {
+        background-color: orange;
+        color: #000;
+    }
+    
+#msg {
+    height: 100px;
+    clear: both;
+}
+
+#userListContainer {
+    float: left;
+    display: block;    
+    padding: 1.5em;    
+    background-color: #ddd;
+    border-radius: 10px;
+    margin-left: 3%;
+}
+    #userListContainer p {
+        font-size: 105%;
+        border-bottom: 1px solid #666;
+        padding-bottom: .25em;
+        margin-bottom: 1em;
+    }
+
+#users {    
+    list-style: none;
+    display: block;
+    margin: 0;
+}
+    #users li {
+        font-size: 125%;
+        line-height: 1.5;
+    }
+    
+    #users li strong {
+        color: maroon;
+    }
+
+#messageArea {
+    clear: both;
+}
+
+#chatTemplate {
+    display: none;
+}
+
+
+
+.clearfix:after {
+	content: ".";
+	display: block;
+	clear: both;
+	visibility: hidden;
+	line-height: 0;
+	height: 0;
+}
+ 
+.clearfix {
+	display: inline-block;
+}
+ 
+html[xmlns] .clearfix {
+	display: block;
+}
+ 
+* html .clearfix {
+	height: 1%;
+}
